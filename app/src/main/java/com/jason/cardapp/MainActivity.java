@@ -18,6 +18,9 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -61,15 +64,48 @@ public class MainActivity extends Activity {
     private DeckData activeDeck;
     private final ArrayList<CardData> drawPile = new ArrayList<>();
     private final ArrayList<CardData> hand = new ArrayList<>();
+    private final ArrayList<Boolean> handFaceStates = new ArrayList<>();
     private final ArrayList<CardData> discardPile = new ArrayList<>();
     private final ArrayList<CardData> energyZone = new ArrayList<>();
-    private boolean handFaceUp = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         loadData();
         showMainMenu();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) enterImmersiveMode();
+    }
+
+    private void enterImmersiveMode() {
+        View decor = getWindow().getDecorView();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getWindow().setDecorFitsSystemWindows(false);
+            WindowInsetsController controller = getWindow().getInsetsController();
+            if (controller != null) {
+                controller.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+                controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            decor.setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            );
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            WindowManager.LayoutParams attrs = getWindow().getAttributes();
+            attrs.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(attrs);
+        }
     }
 
     private void showMainMenu() {
@@ -421,9 +457,9 @@ public class MainActivity extends Activity {
         activeDeck = deck;
         drawPile.clear();
         hand.clear();
+        handFaceStates.clear();
         discardPile.clear();
         energyZone.clear();
-        handFaceUp = true;
         for (Map.Entry<String, Integer> entry : deck.counts.entrySet()) {
             CardData card = findCard(entry.getKey());
             if (card == null) continue;
@@ -435,47 +471,43 @@ public class MainActivity extends Activity {
 
     private void showPlayScreen() {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        normalizeHandFaceStates();
 
         FrameLayout screen = new FrameLayout(this);
         screen.setBackground(boardBackground());
         setContentView(screen);
+        enterImmersiveMode();
 
         LinearLayout board = new LinearLayout(this);
         board.setOrientation(LinearLayout.VERTICAL);
-        board.setPadding(dp(12), dp(8), dp(12), dp(8));
+        board.setPadding(dp(8), dp(6), dp(8), dp(6));
         screen.addView(board, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         LinearLayout topBar = new LinearLayout(this);
         topBar.setOrientation(LinearLayout.HORIZONTAL);
         topBar.setGravity(Gravity.CENTER_VERTICAL);
-        topBar.setPadding(dp(6), 0, dp(6), dp(6));
-        board.addView(topBar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(54)));
+        topBar.setPadding(dp(4), 0, dp(4), dp(4));
+        board.addView(topBar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(46)));
 
         Button back = hearthButton("‹ 牌組", v -> showUseDeckSelector());
-        topBar.addView(back, new LinearLayout.LayoutParams(dp(94), dp(44)));
+        topBar.addView(back, new LinearLayout.LayoutParams(dp(80), dp(38)));
 
-        TextView title = hearthText("使用中：" + (activeDeck == null ? "牌組" : activeDeck.name), 20, true);
+        TextView title = hearthText("使用中：" + (activeDeck == null ? "牌組" : activeDeck.name), 18, true);
         title.setGravity(Gravity.CENTER_VERTICAL);
-        title.setPadding(dp(10), 0, dp(6), 0);
+        title.setPadding(dp(8), 0, dp(6), 0);
         topBar.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
 
-        TextView status = hearthBadge("牌庫 " + drawPile.size() + "  ｜  手牌 " + hand.size() + "  ｜  棄牌 " + discardPile.size() + "  ｜  能量 " + energyZone.size());
-        topBar.addView(status, new LinearLayout.LayoutParams(dp(330), dp(42)));
+        TextView status = hearthBadge("牌庫 " + drawPile.size() + "  |  手牌 " + hand.size() + "  |  棄牌 " + discardPile.size() + "  |  能量 " + energyZone.size());
+        topBar.addView(status, new LinearLayout.LayoutParams(dp(280), dp(38)));
 
         Button shuffle = hearthButton("洗牌", v -> {
             Collections.shuffle(drawPile);
             toast("牌庫已洗牌");
             showPlayScreen();
         });
-        topBar.addView(shuffle, new LinearLayout.LayoutParams(dp(88), dp(44)));
-
-        Button flip = hearthButton(handFaceUp ? "蓋牌" : "正面", v -> {
-            handFaceUp = !handFaceUp;
-            showPlayScreen();
-        });
-        LinearLayout.LayoutParams flipLp = new LinearLayout.LayoutParams(dp(88), dp(44));
-        flipLp.setMargins(dp(6), 0, 0, 0);
-        topBar.addView(flip, flipLp);
+        LinearLayout.LayoutParams shuffleLp = new LinearLayout.LayoutParams(dp(74), dp(38));
+        shuffleLp.setMargins(dp(6), 0, 0, 0);
+        topBar.addView(shuffle, shuffleLp);
 
         LinearLayout playArea = new LinearLayout(this);
         playArea.setOrientation(LinearLayout.HORIZONTAL);
@@ -484,43 +516,45 @@ public class MainActivity extends Activity {
 
         LinearLayout leftRail = new LinearLayout(this);
         leftRail.setOrientation(LinearLayout.VERTICAL);
-        leftRail.setPadding(0, dp(4), dp(8), dp(4));
-        playArea.addView(leftRail, new LinearLayout.LayoutParams(dp(180), ViewGroup.LayoutParams.MATCH_PARENT));
-        leftRail.addView(deckSourceView(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(150)));
+        leftRail.setPadding(0, dp(4), dp(6), dp(4));
+        playArea.addView(leftRail, new LinearLayout.LayoutParams(dp(150), ViewGroup.LayoutParams.MATCH_PARENT));
+        leftRail.addView(deckSourceView(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(128)));
         leftRail.addView(zoneStackPreview("棄牌堆", discardPile), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
         LinearLayout table = new LinearLayout(this);
         table.setOrientation(LinearLayout.VERTICAL);
-        table.setPadding(dp(8), dp(4), dp(8), dp(4));
+        table.setPadding(dp(8), dp(5), dp(8), dp(5));
         table.setBackground(hearthPanel(Color.rgb(55, 28, 15), Color.rgb(111, 69, 32), dp(22), dp(3)));
         playArea.addView(table, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
 
-        TextView tableHint = hearthText("把牌庫拖到中央抽牌；把手牌拖到右側區域移動。", 14, false);
+        TextView tableHint = hearthText("牌庫可直接拖到手牌；手牌輕觸翻面，拖曳到右側區域移動。", 13, false);
         tableHint.setGravity(Gravity.CENTER);
         tableHint.setTextColor(Color.rgb(243, 220, 165));
-        table.addView(tableHint, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(30)));
+        table.addView(tableHint, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(26)));
 
-        table.addView(playDropZone("抽到手牌區", "牌庫 → 這裡\n抽一張到手牌", "HAND"), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        LinearLayout centerSurface = new LinearLayout(this);
+        centerSurface.setGravity(Gravity.CENTER);
+        centerSurface.setPadding(dp(6), dp(6), dp(6), dp(6));
+        centerSurface.setBackground(hearthPanel(Color.rgb(126, 78, 28), Color.rgb(72, 39, 19), dp(16), dp(1)));
+        TextView centerText = hearthText("牌桌區", 16, true);
+        centerText.setGravity(Gravity.CENTER);
+        centerText.setTextColor(Color.rgb(209, 179, 124));
+        centerSurface.addView(centerText, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        table.addView(centerSurface, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
-        TextView handTitle = hearthText("手牌區", 16, true);
-        handTitle.setGravity(Gravity.CENTER);
-        handTitle.setPadding(0, dp(4), 0, 0);
-        table.addView(handTitle, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(32)));
-        table.addView(handView(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(178)));
+        table.addView(handDropArea(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(170)));
 
         LinearLayout rightRail = new LinearLayout(this);
         rightRail.setOrientation(LinearLayout.VERTICAL);
-        rightRail.setPadding(dp(8), dp(4), 0, dp(4));
-        playArea.addView(rightRail, new LinearLayout.LayoutParams(dp(220), ViewGroup.LayoutParams.MATCH_PARENT));
-        rightRail.addView(playDropZone("抽到棄牌", "牌庫 → 這裡\n翻一張進棄牌", "DISCARD"), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
-        rightRail.addView(playDropZone("棄牌區", "手牌 → 這裡\n進棄牌", "DISCARD"), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
-        rightRail.addView(playDropZone("能量區", "手牌 → 這裡\n放置能量", "ENERGY"), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
-        rightRail.addView(playDropZone("牌庫底部", "手牌 → 這裡\n放回底部", "DECK_BOTTOM"), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
-        rightRail.addView(zoneStackPreview("能量堆", energyZone), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(116)));
+        rightRail.setPadding(dp(6), dp(4), 0, dp(4));
+        playArea.addView(rightRail, new LinearLayout.LayoutParams(dp(168), ViewGroup.LayoutParams.MATCH_PARENT));
+        rightRail.addView(playDropZone("棄牌區", "牌庫 / 手牌\n拖到這裡", "DISCARD"), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        rightRail.addView(playDropZone("能量區：" + energyZone.size(), "手牌拖到這裡\n只計數量", "ENERGY"), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        rightRail.addView(playDropZone("牌庫底部", "手牌拖到這裡\n放回底部", "DECK_BOTTOM"), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
     }
 
     private View deckSourceView() {
-        LinearLayout box = hearthDropBox("牌庫", drawPile.isEmpty() ? "空牌庫" : "長按拖曳\n剩餘 " + drawPile.size() + " 張");
+        LinearLayout box = hearthDropBox("牌庫", drawPile.isEmpty() ? "空牌庫" : "拖曳抽牌\n剩餘 " + drawPile.size() + " 張");
         box.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
                 if (drawPile.isEmpty()) {
@@ -536,39 +570,107 @@ public class MainActivity extends Activity {
         return box;
     }
 
+    private View handDropArea() {
+        LinearLayout area = new LinearLayout(this);
+        area.setOrientation(LinearLayout.VERTICAL);
+        area.setPadding(dp(6), dp(4), dp(6), dp(4));
+        area.setBackground(hearthPanel(Color.rgb(165, 113, 40), Color.rgb(83, 46, 22), dp(18), dp(2)));
+        area.setOnDragListener((v, event) -> {
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_ENTERED:
+                    v.setBackground(hearthPanel(Color.rgb(248, 213, 111), Color.rgb(104, 61, 29), dp(18), dp(4)));
+                    return true;
+                case DragEvent.ACTION_DRAG_EXITED:
+                    v.setBackground(hearthPanel(Color.rgb(165, 113, 40), Color.rgb(83, 46, 22), dp(18), dp(2)));
+                    return true;
+                case DragEvent.ACTION_DROP:
+                    Object state = event.getLocalState();
+                    if (state instanceof DragPayload) handleDrop((DragPayload) state, "HAND");
+                    return true;
+                case DragEvent.ACTION_DRAG_ENDED:
+                    v.setBackground(hearthPanel(Color.rgb(165, 113, 40), Color.rgb(83, 46, 22), dp(18), dp(2)));
+                    return true;
+            }
+            return true;
+        });
+
+        TextView handTitle = hearthText("手牌區", 15, true);
+        handTitle.setGravity(Gravity.CENTER);
+        area.addView(handTitle, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(24)));
+        area.addView(handView(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        return area;
+    }
+
     private View handView() {
+        normalizeHandFaceStates();
         HorizontalScrollView hsv = new HorizontalScrollView(this);
         hsv.setFillViewport(false);
         hsv.setHorizontalScrollBarEnabled(false);
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(8), 0, dp(8), dp(4));
+        row.setPadding(dp(6), 0, dp(6), dp(2));
         if (hand.isEmpty()) {
-            TextView t = hearthText("目前沒有手牌。把左側牌庫拖到中央即可抽牌。", 15, true);
+            TextView t = hearthText("把左側牌庫拖到這裡抽牌", 15, true);
             t.setGravity(Gravity.CENTER);
             t.setTextColor(Color.rgb(238, 214, 165));
-            t.setBackground(hearthPanel(Color.rgb(72, 43, 24), Color.rgb(36, 20, 12), dp(18), dp(2)));
-            row.addView(t, new LinearLayout.LayoutParams(dp(480), dp(142)));
+            t.setBackground(hearthPanel(Color.rgb(100, 67, 27), Color.rgb(49, 27, 14), dp(16), dp(2)));
+            row.addView(t, new LinearLayout.LayoutParams(dp(420), dp(116)));
         } else {
             for (int i = 0; i < hand.size(); i++) {
                 final int idx = i;
-                View card = playCardPreview(hand.get(i), handFaceUp, 104, 146);
-                card.setOnTouchListener((v, event) -> {
-                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        DragPayload payload = new DragPayload("HAND", idx);
-                        startCompatDrag(v, payload);
-                        return true;
-                    }
-                    return true;
-                });
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(110), dp(154));
-                lp.setMargins(0, 0, dp(8), 0);
+                View card = playCardPreview(hand.get(i), isHandCardFaceUp(idx), 88, 124);
+                attachHandCardTouch(card, idx);
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(94), dp(132));
+                lp.setMargins(0, 0, dp(6), 0);
                 row.addView(card, lp);
             }
         }
         hsv.addView(row);
         return hsv;
+    }
+
+    private void attachHandCardTouch(View card, final int idx) {
+        final float[] downX = new float[1];
+        final float[] downY = new float[1];
+        final boolean[] dragging = new boolean[1];
+        final int threshold = dp(8);
+        card.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    downX[0] = event.getRawX();
+                    downY[0] = event.getRawY();
+                    dragging[0] = false;
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    float dx = Math.abs(event.getRawX() - downX[0]);
+                    float dy = Math.abs(event.getRawY() - downY[0]);
+                    if (!dragging[0] && (dx > threshold || dy > threshold)) {
+                        dragging[0] = true;
+                        DragPayload payload = new DragPayload("HAND", idx);
+                        startCompatDrag(v, payload);
+                    }
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (!dragging[0] && idx >= 0 && idx < handFaceStates.size()) {
+                        handFaceStates.set(idx, !handFaceStates.get(idx));
+                        showPlayScreen();
+                    }
+                    return true;
+                case MotionEvent.ACTION_CANCEL:
+                    return true;
+            }
+            return true;
+        });
+    }
+
+    private boolean isHandCardFaceUp(int idx) {
+        return idx < 0 || idx >= handFaceStates.size() || handFaceStates.get(idx);
+    }
+
+    private void normalizeHandFaceStates() {
+        while (handFaceStates.size() < hand.size()) handFaceStates.add(true);
+        while (handFaceStates.size() > hand.size()) handFaceStates.remove(handFaceStates.size() - 1);
     }
 
     private View playDropZone(String title, String hint, String zone) {
@@ -600,9 +702,9 @@ public class MainActivity extends Activity {
         box.setGravity(Gravity.CENTER);
         box.setPadding(dp(8), dp(8), dp(8), dp(8));
         box.setBackground(hearthPanel(Color.rgb(158, 105, 38), Color.rgb(61, 35, 18), dp(18), dp(2)));
-        TextView t = hearthText(title, 17, true);
+        TextView t = hearthText(title, 16, true);
         t.setGravity(Gravity.CENTER);
-        TextView h = hearthText(hint, 12, false);
+        TextView h = hearthText(hint, 11, false);
         h.setGravity(Gravity.CENTER);
         h.setTextColor(Color.rgb(231, 207, 158));
         box.addView(t);
@@ -644,6 +746,7 @@ public class MainActivity extends Activity {
             CardData card = drawPile.remove(drawPile.size() - 1);
             if ("HAND".equals(zone)) {
                 hand.add(card);
+                handFaceStates.add(true);
                 toast("抽到手牌：「" + card.name + "」");
             } else if ("DISCARD".equals(zone)) {
                 discardPile.add(card);
@@ -659,6 +762,7 @@ public class MainActivity extends Activity {
         if ("HAND".equals(payload.source)) {
             if (payload.index < 0 || payload.index >= hand.size()) return;
             CardData card = hand.remove(payload.index);
+            Boolean face = payload.index < handFaceStates.size() ? handFaceStates.remove(payload.index) : true;
             if ("DISCARD".equals(zone)) {
                 discardPile.add(card);
                 toast("已棄牌：「" + card.name + "」");
@@ -670,6 +774,7 @@ public class MainActivity extends Activity {
                 toast("已放到牌庫底部：「" + card.name + "」");
             } else {
                 hand.add(payload.index, card);
+                handFaceStates.add(payload.index, face);
                 toast("手牌只能拖到棄牌區、能量區或牌庫底部");
             }
             showPlayScreen();
@@ -856,6 +961,7 @@ public class MainActivity extends Activity {
         root.setPadding(dp(16), dp(16), dp(16), dp(24));
         scrollView.addView(root);
         setContentView(scrollView);
+        enterImmersiveMode();
 
         LinearLayout top = row();
         if (back) {
