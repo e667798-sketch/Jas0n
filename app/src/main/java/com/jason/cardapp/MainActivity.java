@@ -13,10 +13,13 @@ import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.text.Layout;
 import android.view.DragEvent;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewParent;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
@@ -696,34 +699,51 @@ public class MainActivity extends Activity {
         final float[] downX = new float[1];
         final float[] downY = new float[1];
         final boolean[] dragging = new boolean[1];
-        final int threshold = dp(8);
+        final int threshold = dp(2);
         card.setOnTouchListener((v, event) -> {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     downX[0] = event.getRawX();
                     downY[0] = event.getRawY();
                     dragging[0] = false;
+                    v.setPressed(true);
+                    setParentIntercept(v, true);
                     return true;
                 case MotionEvent.ACTION_MOVE:
                     float dx = Math.abs(event.getRawX() - downX[0]);
                     float dy = Math.abs(event.getRawY() - downY[0]);
                     if (!dragging[0] && (dx > threshold || dy > threshold)) {
                         dragging[0] = true;
+                        v.setPressed(false);
+                        setParentIntercept(v, true);
                         DragPayload payload = new DragPayload("HAND", idx);
                         startCompatDrag(v, payload);
                     }
                     return true;
                 case MotionEvent.ACTION_UP:
+                    v.setPressed(false);
+                    setParentIntercept(v, false);
                     if (!dragging[0] && idx >= 0 && idx < handFaceStates.size()) {
                         handFaceStates.set(idx, !handFaceStates.get(idx));
                         showPlayScreen();
                     }
                     return true;
                 case MotionEvent.ACTION_CANCEL:
+                    v.setPressed(false);
+                    setParentIntercept(v, false);
                     return true;
             }
             return true;
         });
+    }
+
+    private void setParentIntercept(View v, boolean disallow) {
+        ViewParent parent = v.getParent();
+        while (parent != null) {
+            parent.requestDisallowInterceptTouchEvent(disallow);
+            if (parent instanceof View) parent = ((View) parent).getParent();
+            else break;
+        }
     }
 
     private boolean isHandCardFaceUp(int idx) {
@@ -888,7 +908,12 @@ public class MainActivity extends Activity {
         wrap.addView(hint, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(24)));
 
         FrameLayout cardArea = new FrameLayout(this);
-        cardArea.setPadding(0, dp(10), 0, dp(8));
+        cardArea.setPadding(0, dp(8), 0, dp(8));
+        cardArea.setClipChildren(true);
+        cardArea.setClipToPadding(true);
+        final int cardW = dp(108);
+        final int cardH = dp(152);
+
         if (discardPile.isEmpty()) {
             TextView empty = hearthText("空", 13, false);
             empty.setGravity(Gravity.CENTER);
@@ -896,22 +921,22 @@ public class MainActivity extends Activity {
             cardArea.addView(empty, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         } else {
             CardData latest = discardPile.get(discardPile.size() - 1);
-            View back1 = playCardPreview(latest, false, 96, 136);
-            back1.setAlpha(0.35f);
-            FrameLayout.LayoutParams b1 = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+            View back1 = playCardPreview(latest, false, 108, 152);
+            back1.setAlpha(0.28f);
+            FrameLayout.LayoutParams b1 = new FrameLayout.LayoutParams(cardW, cardH, Gravity.CENTER);
             b1.leftMargin = dp(10);
             b1.topMargin = dp(10);
             cardArea.addView(back1, b1);
 
-            View back2 = playCardPreview(latest, false, 96, 136);
-            back2.setAlpha(0.55f);
-            FrameLayout.LayoutParams b2 = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+            View back2 = playCardPreview(latest, false, 108, 152);
+            back2.setAlpha(0.42f);
+            FrameLayout.LayoutParams b2 = new FrameLayout.LayoutParams(cardW, cardH, Gravity.CENTER);
             b2.leftMargin = dp(5);
             b2.topMargin = dp(5);
             cardArea.addView(back2, b2);
 
-            View topCard = playCardPreview(latest, true, 96, 136);
-            FrameLayout.LayoutParams top = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
+            View topCard = playCardPreview(latest, true, 108, 152);
+            FrameLayout.LayoutParams top = new FrameLayout.LayoutParams(cardW, cardH, Gravity.CENTER);
             cardArea.addView(topCard, top);
         }
 
@@ -924,6 +949,10 @@ public class MainActivity extends Activity {
         cardBox.setOrientation(LinearLayout.VERTICAL);
         cardBox.setGravity(Gravity.CENTER);
         cardBox.setPadding(dp(5), dp(5), dp(5), dp(5));
+        cardBox.setClipChildren(true);
+        cardBox.setClipToPadding(true);
+        cardBox.setMinimumWidth(dp(wDp));
+        cardBox.setMinimumHeight(dp(hDp));
         cardBox.setBackground(hearthPanel(Color.rgb(181, 127, 42), front ? Color.rgb(238, 220, 174) : Color.rgb(39, 21, 14), dp(14), dp(3)));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(wDp), dp(hDp));
         params.setMargins(dp(4), dp(4), dp(4), dp(4));
@@ -933,6 +962,7 @@ public class MainActivity extends Activity {
             TextView back = hearthText("CARD\nBACK", 14, true);
             back.setTextColor(Color.rgb(248, 222, 146));
             back.setGravity(Gravity.CENTER);
+            back.setMaxWidth(dp(wDp - 10));
             cardBox.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             return cardBox;
         }
@@ -940,6 +970,9 @@ public class MainActivity extends Activity {
         TextView cost = hearthText(card.cost == null || card.cost.isEmpty() ? "-" : card.cost, 12, true);
         cost.setGravity(Gravity.END);
         cost.setTextColor(Color.rgb(58, 34, 13));
+        cost.setSingleLine(true);
+        cost.setEllipsize(TextUtils.TruncateAt.END);
+        cost.setMaxWidth(dp(wDp - 10));
         cardBox.addView(cost, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(Math.max(14, hDp / 9))));
 
         int imageHeight = Math.max(34, (int) (hDp * 0.38f));
@@ -954,6 +987,7 @@ public class MainActivity extends Activity {
             placeholder.setGravity(Gravity.CENTER);
             placeholder.setTextColor(Color.rgb(111, 83, 50));
             placeholder.setBackground(hearthPanel(Color.rgb(151, 112, 55), Color.rgb(246, 236, 202), dp(8), dp(1)));
+            placeholder.setMaxWidth(dp(wDp - 10));
             cardBox.addView(placeholder, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(imageHeight)));
         }
 
@@ -962,19 +996,54 @@ public class MainActivity extends Activity {
         name.setTextColor(Color.rgb(48, 31, 16));
         name.setSingleLine(false);
         name.setMaxLines(2);
+        name.setEllipsize(TextUtils.TruncateAt.END);
+        name.setHorizontallyScrolling(false);
+        name.setMaxWidth(dp(wDp - 10));
         name.setBackground(hearthPanel(Color.rgb(160, 111, 42), Color.rgb(230, 205, 144), dp(6), dp(1)));
         LinearLayout.LayoutParams nameLp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(Math.max(22, hDp / 6)));
         nameLp.setMargins(0, dp(3), 0, dp(3));
         cardBox.addView(name, nameLp);
 
-        TextView effect = hearthText(card.desc == null || card.desc.trim().isEmpty() ? "" : card.desc.trim(), 9, false);
+        TextView effect = hearthText(previewEffectText(card == null ? "" : card.desc, wDp, hDp), 9, false);
         effect.setTextColor(Color.rgb(61, 42, 21));
         effect.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        effect.setSingleLine(false);
+        effect.setHorizontallyScrolling(false);
         effect.setMaxLines(4);
+        effect.setEllipsize(TextUtils.TruncateAt.END);
+        effect.setMaxWidth(dp(wDp - 10));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            effect.setBreakStrategy(Layout.BREAK_STRATEGY_SIMPLE);
+            effect.setHyphenationFrequency(Layout.HYPHENATION_FREQUENCY_NORMAL);
+        }
         effect.setPadding(dp(3), dp(2), dp(3), dp(2));
         effect.setBackground(hearthPanel(Color.rgb(184, 145, 71), Color.rgb(247, 235, 199), dp(7), dp(1)));
         cardBox.addView(effect, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         return cardBox;
+    }
+
+    private String previewEffectText(String raw, int wDp, int hDp) {
+        if (raw == null) return "";
+        String text = raw.trim().replace('\n', ' ').replace('\r', ' ');
+        if (text.isEmpty()) return "";
+        int limit = Math.max(28, Math.min(90, (wDp * hDp) / 230));
+        if (text.length() > limit) text = text.substring(0, limit) + "…";
+        StringBuilder out = new StringBuilder();
+        int run = 0;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            out.append(c);
+            if (Character.isWhitespace(c) || c == '/' || c == '-' || c == '_' || c == '.' || c == '?' || c == '&' || c == '=') {
+                run = 0;
+            } else {
+                run++;
+                if (run >= 8) {
+                    out.append('​');
+                    run = 0;
+                }
+            }
+        }
+        return out.toString();
     }
 
     private void startCompatDrag(View v, DragPayload payload) {
