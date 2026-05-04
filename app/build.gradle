@@ -10,7 +10,7 @@ android {
         applicationId 'com.jason.cardapp'
         minSdk 23
         targetSdk 35
-        versionCode 8
-        versionName '0.8-fixed-ratio-touch'
+        versionCode 9
+        versionName '0.9-back-button-nav'
     }
 }

@@ -52,6 +52,7 @@ public class MainActivity extends Activity {
     private static final int REQ_PICK_IMAGE = 1001;
 
     private LinearLayout root;
+    private Runnable systemBackAction;
     private final ArrayList<CardData> cards = new ArrayList<>();
     private final ArrayList<DeckData> decks = new ArrayList<>();
 
@@ -85,6 +86,19 @@ public class MainActivity extends Activity {
         if (hasFocus) enterImmersiveMode();
     }
 
+    @Override
+    public void onBackPressed() {
+        handleSystemBack();
+    }
+
+    private void handleSystemBack() {
+        if (systemBackAction != null) {
+            systemBackAction.run();
+        } else {
+            finish();
+        }
+    }
+
     private void enterImmersiveMode() {
         View decor = getWindow().getDecorView();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -114,6 +128,7 @@ public class MainActivity extends Activity {
 
     private void showMainMenu() {
         setBaseScreen("卡牌牌組工具", false, null);
+        systemBackAction = () -> moveTaskToBack(true);
 
         root.addView(bigButton("製作卡牌", v -> showCardManager()));
         root.addView(bigButton("編輯牌組", v -> showDeckManager()));
@@ -537,6 +552,7 @@ public class MainActivity extends Activity {
         screen.setBackground(boardBackground());
         setContentView(screen);
         enterImmersiveMode();
+        systemBackAction = this::showUseDeckSelector;
 
         LinearLayout board = new LinearLayout(this);
         board.setOrientation(LinearLayout.VERTICAL);
@@ -549,7 +565,7 @@ public class MainActivity extends Activity {
         topBar.setPadding(dp(4), 0, dp(4), dp(4));
         board.addView(topBar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(46)));
 
-        Button back = hearthButton("‹ 牌組", v -> showUseDeckSelector());
+        Button back = hearthButton("‹ 牌組", v -> handleSystemBack());
         topBar.addView(back, new LinearLayout.LayoutParams(dp(80), dp(38)));
 
         TextView title = hearthText("使用中：" + (activeDeck == null ? "牌組" : activeDeck.name), 18, true);
@@ -1080,6 +1096,10 @@ public class MainActivity extends Activity {
     }
 
     private void setBaseScreen(String title, boolean back, Runnable backAction) {
+        systemBackAction = back ? (() -> {
+            if (backAction != null) backAction.run(); else showMainMenu();
+        }) : null;
+
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         ScrollView scrollView = new ScrollView(this);
         scrollView.setBackground(boardBackground());
@@ -1093,9 +1113,7 @@ public class MainActivity extends Activity {
 
         LinearLayout top = row();
         if (back) {
-            Button b = smallButton("‹ 返回", v -> {
-                if (backAction != null) backAction.run(); else showMainMenu();
-            });
+            Button b = smallButton("‹ 返回", v -> handleSystemBack());
             top.addView(b, new LinearLayout.LayoutParams(dp(96), dp(46)));
         }
         TextView titleView = hearthText(title, 24, true);
