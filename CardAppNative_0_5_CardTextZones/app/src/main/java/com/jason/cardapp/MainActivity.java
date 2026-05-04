@@ -116,8 +116,8 @@ public class MainActivity extends Activity {
         root.addView(bigButton("編輯牌組", v -> showDeckManager()));
         root.addView(bigButton("使用牌組", v -> showUseDeckSelector()));
 
-        TextView hint = hearthText("資料會儲存在手機本機 App 資料中。刪除 App 或清除資料時會一起刪除。", 13, false);
-        hint.setTextColor(Color.rgb(224, 202, 156));
+        TextView hint = text("資料會儲存在手機本機 App 資料中。刪除 App 或清除資料時會一起刪除。", 13, false);
+        hint.setTextColor(Color.rgb(110, 110, 110));
         hint.setPadding(0, dp(20), 0, 0);
         root.addView(hint);
     }
@@ -130,8 +130,8 @@ public class MainActivity extends Activity {
         root.addView(section);
 
         if (editing) {
-            TextView editingHint = hearthText("正在編輯：「" + cards.get(editingCardIndex).name + "」", 14, true);
-            editingHint.setTextColor(Color.rgb(243, 220, 165));
+            TextView editingHint = text("正在編輯：「" + cards.get(editingCardIndex).name + "」", 14, true);
+            editingHint.setTextColor(Color.rgb(90, 70, 40));
             editingHint.setPadding(dp(2), 0, 0, dp(6));
             root.addView(editingHint);
         }
@@ -151,9 +151,8 @@ public class MainActivity extends Activity {
 
         LinearLayout imageRow = row();
         imageRow.addView(button("選擇圖片", v -> pickCardImage()), weightParams(1));
-        TextView imageStatus = hearthText(draftCardImageUri.isEmpty() ? "尚未選擇圖片" : "已選擇圖片", 14, false);
+        TextView imageStatus = text(draftCardImageUri.isEmpty() ? "尚未選擇圖片" : "已選擇圖片", 14, false);
         imageStatus.setGravity(Gravity.CENTER_VERTICAL);
-        imageStatus.setTextColor(Color.rgb(231, 207, 158));
         imageStatus.setPadding(dp(12), 0, 0, 0);
         imageRow.addView(imageStatus, weightParams(1));
         root.addView(imageRow);
@@ -274,10 +273,10 @@ public class MainActivity extends Activity {
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
         info.setPadding(dp(12), 0, dp(8), 0);
-        TextView name = hearthText(card.name, 17, true);
-        TextView cost = hearthText("費用：" + safe(card.cost), 14, false);
-        TextView desc = hearthText(card.desc.isEmpty() ? "無效果文字" : card.desc, 13, false);
-        desc.setTextColor(Color.rgb(231, 207, 158));
+        TextView name = text(card.name, 17, true);
+        TextView cost = text("費用：" + safe(card.cost), 14, false);
+        TextView desc = text(card.desc.isEmpty() ? "無效果文字" : card.desc, 13, false);
+        desc.setTextColor(Color.rgb(90, 90, 90));
         desc.setMaxLines(4);
         info.addView(name);
         info.addView(cost);
@@ -346,8 +345,7 @@ public class MainActivity extends Activity {
         root.addView(sectionTitle("目前牌組：「" + deck.name + "」"));
 
         int total = deck.totalCards();
-        TextView totalText = hearthText("總張數：" + total, 15, true);
-        totalText.setTextColor(Color.rgb(243, 220, 165));
+        TextView totalText = text("總張數：" + total, 15, true);
         totalText.setPadding(0, 0, 0, dp(8));
         root.addView(totalText);
 
@@ -448,8 +446,8 @@ public class MainActivity extends Activity {
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
         info.setPadding(dp(10), 0, dp(6), 0);
-        info.addView(hearthText(card.name, 16, true));
-        info.addView(hearthText("數量：" + count, 14, false));
+        info.addView(text(card.name, 16, true));
+        info.addView(text("數量：" + count, 14, false));
         wrap.addView(info, weightParams(1));
 
         Button minus = button("－", v -> {
@@ -474,7 +472,7 @@ public class MainActivity extends Activity {
         wrap.setOrientation(LinearLayout.HORIZONTAL);
         wrap.setGravity(Gravity.CENTER_VERTICAL);
         wrap.addView(cardPreview(card, true, 58, 82));
-        TextView name = hearthText(card.name + "　費用：" + safe(card.cost), 15, true);
+        TextView name = text(card.name + "　費用：" + safe(card.cost), 15, true);
         name.setPadding(dp(10), 0, 0, 0);
         wrap.addView(name, weightParams(1));
         wrap.addView(button("加入", v -> {
@@ -585,6 +583,11 @@ public class MainActivity extends Activity {
         center.setBackground(hearthPanel(Color.rgb(55, 28, 15), Color.rgb(111, 69, 32), dp(22), dp(3)));
         playArea.addView(center, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1));
 
+        TextView hint = hearthText("牌庫拖到手牌抽牌；手牌輕觸翻面；手牌拖到牌庫回底部。", 12, false);
+        hint.setGravity(Gravity.CENTER);
+        hint.setTextColor(Color.rgb(243, 220, 165));
+        center.addView(hint, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(24)));
+
         center.addView(handDropArea(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
 
         LinearLayout rightRail = new LinearLayout(this);
@@ -655,13 +658,7 @@ public class MainActivity extends Activity {
 
         TextView handTitle = hearthText("手牌區", 15, true);
         handTitle.setGravity(Gravity.CENTER);
-        area.addView(handTitle, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(22)));
-
-        TextView handHint = hearthText("把左側牌庫拖到這裡抽牌", 11, false);
-        handHint.setGravity(Gravity.CENTER);
-        handHint.setTextColor(Color.rgb(231, 207, 158));
-        area.addView(handHint, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(18)));
-
+        area.addView(handTitle, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(24)));
         area.addView(handView(), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         return area;
     }
@@ -676,8 +673,11 @@ public class MainActivity extends Activity {
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dp(6), 0, dp(6), dp(2));
         if (hand.isEmpty()) {
-            Space spacer = new Space(this);
-            row.addView(spacer, new LinearLayout.LayoutParams(dp(12), dp(1)));
+            TextView t = hearthText("把左側牌庫拖到這裡抽牌", 15, true);
+            t.setGravity(Gravity.CENTER);
+            t.setTextColor(Color.rgb(238, 214, 165));
+            t.setBackground(hearthPanel(Color.rgb(100, 67, 27), Color.rgb(49, 27, 14), dp(16), dp(2)));
+            row.addView(t, new LinearLayout.LayoutParams(dp(420), dp(116)));
         } else {
             for (int i = 0; i < hand.size(); i++) {
                 final int idx = i;
@@ -887,35 +887,34 @@ public class MainActivity extends Activity {
         hint.setTextColor(Color.rgb(231, 207, 158));
         wrap.addView(hint, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(24)));
 
-        FrameLayout cardArea = new FrameLayout(this);
-        cardArea.setPadding(0, dp(10), 0, dp(8));
+        ScrollView scroll = new ScrollView(this);
+        LinearLayout cardsColumn = new LinearLayout(this);
+        cardsColumn.setOrientation(LinearLayout.VERTICAL);
+        cardsColumn.setGravity(Gravity.CENTER_HORIZONTAL);
+        cardsColumn.setPadding(0, dp(4), 0, dp(8));
+
         if (discardPile.isEmpty()) {
             TextView empty = hearthText("空", 13, false);
             empty.setGravity(Gravity.CENTER);
             empty.setTextColor(Color.rgb(232, 211, 164));
-            cardArea.addView(empty, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            cardsColumn.addView(empty, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(120)));
         } else {
-            CardData latest = discardPile.get(discardPile.size() - 1);
-            View back1 = playCardPreview(latest, false, 96, 136);
-            back1.setAlpha(0.35f);
-            FrameLayout.LayoutParams b1 = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
-            b1.leftMargin = dp(10);
-            b1.topMargin = dp(10);
-            cardArea.addView(back1, b1);
+            TextView newest = hearthText("最新棄牌", 11, false);
+            newest.setGravity(Gravity.CENTER);
+            newest.setTextColor(Color.rgb(243, 220, 165));
+            cardsColumn.addView(newest, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(20)));
 
-            View back2 = playCardPreview(latest, false, 96, 136);
-            back2.setAlpha(0.55f);
-            FrameLayout.LayoutParams b2 = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
-            b2.leftMargin = dp(5);
-            b2.topMargin = dp(5);
-            cardArea.addView(back2, b2);
-
-            View topCard = playCardPreview(latest, true, 96, 136);
-            FrameLayout.LayoutParams top = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER);
-            cardArea.addView(topCard, top);
+            int start = Math.max(0, discardPile.size() - 8);
+            for (int i = discardPile.size() - 1; i >= start; i--) {
+                View c = playCardPreview(discardPile.get(i), true, 96, 136);
+                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(108), dp(148));
+                lp.setMargins(0, 0, 0, dp(6));
+                cardsColumn.addView(c, lp);
+            }
         }
 
-        wrap.addView(cardArea, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        scroll.addView(cardsColumn);
+        wrap.addView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
         return wrap;
     }
 
@@ -1007,17 +1006,65 @@ public class MainActivity extends Activity {
     }
 
     private View cardPreview(CardData card, boolean front, int wDp, int hDp) {
-        return playCardPreview(card, front, wDp, hDp);
+        LinearLayout cardBox = new LinearLayout(this);
+        cardBox.setOrientation(LinearLayout.VERTICAL);
+        cardBox.setGravity(Gravity.CENTER);
+        cardBox.setPadding(dp(5), dp(5), dp(5), dp(5));
+        cardBox.setBackground(border(Color.rgb(25, 25, 25), front ? Color.WHITE : Color.rgb(20, 20, 20), dp(10), dp(2)));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(wDp), dp(hDp));
+        params.setMargins(dp(4), dp(4), dp(4), dp(4));
+        cardBox.setLayoutParams(params);
+
+        if (!front) {
+            TextView back = text("CARD\nBACK", 16, true);
+            back.setTextColor(Color.WHITE);
+            back.setGravity(Gravity.CENTER);
+            cardBox.addView(back, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            return cardBox;
+        }
+
+        TextView cost = text(card.cost == null || card.cost.isEmpty() ? "-" : card.cost, 12, true);
+        cost.setGravity(Gravity.END);
+        cardBox.addView(cost, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(Math.max(12, hDp / 10))));
+
+        int imageHeight = Math.max(24, (int) (hDp * 0.33f));
+        if (card.imageUri != null && !card.imageUri.isEmpty()) {
+            ImageView image = new ImageView(this);
+            image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            try {
+                image.setImageURI(Uri.parse(card.imageUri));
+            } catch (Exception ignored) {
+            }
+            cardBox.addView(image, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(imageHeight)));
+        } else {
+            TextView placeholder = text("NO\nIMAGE", 11, true);
+            placeholder.setGravity(Gravity.CENTER);
+            placeholder.setTextColor(Color.rgb(120, 120, 120));
+            placeholder.setBackground(border(Color.rgb(210, 210, 210), Color.rgb(245, 245, 245), dp(6), dp(1)));
+            cardBox.addView(placeholder, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(imageHeight)));
+        }
+
+        TextView name = text(card.name, 11, true);
+        name.setGravity(Gravity.CENTER);
+        name.setSingleLine(false);
+        name.setMaxLines(2);
+        cardBox.addView(name, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(Math.max(18, hDp / 6))));
+
+        TextView effect = text(card.desc == null ? "" : card.desc, 8, false);
+        effect.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
+        effect.setMaxLines(4);
+        effect.setTextColor(Color.rgb(50, 50, 50));
+        effect.setPadding(dp(2), 0, dp(2), 0);
+        cardBox.addView(effect, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1));
+        return cardBox;
     }
 
     private void setBaseScreen(String title, boolean back, Runnable backAction) {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         ScrollView scrollView = new ScrollView(this);
-        scrollView.setBackground(boardBackground());
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(16), dp(16), dp(16), dp(24));
-        root.setBackground(boardBackground());
         scrollView.addView(root);
         setContentView(scrollView);
         enterImmersiveMode();
@@ -1029,7 +1076,7 @@ public class MainActivity extends Activity {
             });
             top.addView(b, new LinearLayout.LayoutParams(dp(96), dp(46)));
         }
-        TextView titleView = hearthText(title, 24, true);
+        TextView titleView = text(title, 24, true);
         titleView.setGravity(back ? Gravity.CENTER_VERTICAL : Gravity.START);
         top.addView(titleView, weightParams(1));
         root.addView(top);
@@ -1099,14 +1146,14 @@ public class MainActivity extends Activity {
     }
 
     private TextView sectionTitle(String s) {
-        TextView v = hearthText(s, 18, true);
+        TextView v = text(s, 18, true);
         v.setPadding(0, dp(10), 0, dp(8));
         return v;
     }
 
     private TextView label(String s) {
-        TextView v = hearthText(s, 13, true);
-        v.setTextColor(Color.rgb(236, 216, 172));
+        TextView v = text(s, 13, true);
+        v.setTextColor(Color.rgb(70, 70, 70));
         v.setPadding(dp(2), dp(6), 0, dp(3));
         return v;
     }
@@ -1115,12 +1162,10 @@ public class MainActivity extends Activity {
         EditText e = new EditText(this);
         e.setText(value == null ? "" : value);
         e.setHint(hint);
-        e.setHintTextColor(Color.rgb(190, 167, 123));
-        e.setTextColor(Color.rgb(255, 238, 192));
         e.setSingleLine(false);
         e.setTextSize(16);
         e.setPadding(dp(10), dp(8), dp(10), dp(8));
-        e.setBackground(hearthPanel(Color.rgb(150, 108, 44), Color.rgb(61, 35, 18), dp(10), dp(2)));
+        e.setBackground(border(Color.rgb(160, 160, 160), Color.WHITE, dp(10), dp(1)));
         return e;
     }
 
@@ -1134,11 +1179,11 @@ public class MainActivity extends Activity {
     }
 
     private TextView emptyText(String s) {
-        TextView v = hearthText(s, 14, false);
-        v.setTextColor(Color.rgb(224, 202, 156));
+        TextView v = text(s, 14, false);
+        v.setTextColor(Color.rgb(95, 95, 95));
         v.setGravity(Gravity.CENTER);
         v.setPadding(dp(10), dp(14), dp(10), dp(14));
-        v.setBackground(hearthPanel(Color.rgb(124, 82, 31), Color.rgb(42, 24, 13), dp(10), dp(2)));
+        v.setBackground(border(Color.rgb(220, 220, 220), Color.rgb(250, 250, 250), dp(10), dp(1)));
         return v;
     }
 
@@ -1164,9 +1209,8 @@ public class MainActivity extends Activity {
         Button b = new Button(this);
         b.setText(s);
         b.setAllCaps(false);
-        b.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        b.setTextColor(Color.rgb(255, 239, 196));
-        b.setBackground(hearthPanel(Color.rgb(185, 133, 47), Color.rgb(36, 20, 12), dp(14), dp(2)));
+        b.setTextColor(Color.WHITE);
+        b.setBackground(border(Color.rgb(20, 20, 20), Color.rgb(20, 20, 20), dp(12), dp(1)));
         b.setOnClickListener(listener);
         return b;
     }
@@ -1181,7 +1225,7 @@ public class MainActivity extends Activity {
     private LinearLayout panel() {
         LinearLayout p = new LinearLayout(this);
         p.setPadding(dp(8), dp(8), dp(8), dp(8));
-        p.setBackground(hearthPanel(Color.rgb(138, 95, 38), Color.rgb(58, 33, 18), dp(12), dp(2)));
+        p.setBackground(border(Color.rgb(230, 230, 230), Color.rgb(250, 250, 250), dp(12), dp(1)));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.setMargins(0, dp(5), 0, dp(5));
         p.setLayoutParams(lp);
@@ -1190,7 +1234,7 @@ public class MainActivity extends Activity {
 
     private void addDivider() {
         View line = new View(this);
-        line.setBackgroundColor(Color.rgb(182, 140, 73));
+        line.setBackgroundColor(Color.rgb(220, 220, 220));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(1));
         lp.setMargins(0, dp(18), 0, dp(8));
         root.addView(line, lp);
